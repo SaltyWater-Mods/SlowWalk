@@ -1,0 +1,8 @@
+{
+  "name": "SlowWalkMod",
+  "modid": "slowwalkmod",
+  "version": "2.0.0",
+  "authors": ["SaltyWater"],
+  "description": "Adds the ability to walk slowly.",
+  "type": "code" 
+}
