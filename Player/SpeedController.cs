@@ -9,11 +9,10 @@ namespace SlowWalk.Player
         private const string WalkSpeedStat = "walkspeed";
         private const string StatCode = "slowwalk";
         private const int MinimumSpeed = 5;
-        private const int MaximumSpeed = 100;
         private readonly ICoreClientAPI clientApi;
         private readonly int speedStep;
         private EntityPlayer? player;
-        private int speedPercent = MaximumSpeed;
+        private int? speedPercent;
         private bool applyingModifier;
 
         public SpeedController(ICoreClientAPI clientApi, int speedStep)
@@ -34,10 +33,9 @@ namespace SlowWalk.Player
             float walkSpeed = player.Stats.GetBlended(WalkSpeedStat);
             float walkSpeedWithoutSlowWalk = walkSpeed - GetCurrentModifier();
             int currentSpeedPercent = (int)Math.Round(walkSpeed * 100);
-            int maximumSpeedPercent = Math.Clamp(
+            int maximumSpeedPercent = Math.Max(
                 (int)Math.Round(walkSpeedWithoutSlowWalk * 100),
-                MinimumSpeed,
-                MaximumSpeed
+                MinimumSpeed
             );
 
             int adjustedSpeedPercent = Math.Clamp(
@@ -47,7 +45,7 @@ namespace SlowWalk.Player
             );
 
             speedPercent = direction > 0 && adjustedSpeedPercent == maximumSpeedPercent
-                ? MaximumSpeed
+                ? null
                 : adjustedSpeedPercent;
 
             ApplyModifier();
@@ -91,13 +89,18 @@ namespace SlowWalk.Player
 
             float currentModifier = GetCurrentModifier();
             float walkSpeedWithoutSlowWalk = currentPlayer.Stats.GetBlended(WalkSpeedStat) - currentModifier;
-            float minimumWalkSpeed = MinimumSpeed / 100f;
-            float requestedWalkSpeed = speedPercent / 100f;
-            float allowedWalkSpeed = Math.Min(
-                requestedWalkSpeed,
-                Math.Max(walkSpeedWithoutSlowWalk, minimumWalkSpeed)
-            );
-            float newModifier = Math.Min(0, allowedWalkSpeed - walkSpeedWithoutSlowWalk);
+            float newModifier = 0;
+
+            if (speedPercent.HasValue)
+            {
+                float minimumWalkSpeed = MinimumSpeed / 100f;
+                float requestedWalkSpeed = speedPercent.Value / 100f;
+                float allowedWalkSpeed = Math.Min(
+                    requestedWalkSpeed,
+                    Math.Max(walkSpeedWithoutSlowWalk, minimumWalkSpeed)
+                );
+                newModifier = Math.Min(0, allowedWalkSpeed - walkSpeedWithoutSlowWalk);
+            }
 
             if (newModifier != currentModifier)
             {
